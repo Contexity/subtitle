@@ -78,7 +78,9 @@ public class VttParser implements SubtitleParser {
             }
 
             // All Vtt files start with WEBVTT
-            if (cursorStatus == CursorStatus.NONE && textLine.equals("WEBVTT")) {
+            //if (cursorStatus == CursorStatus.NONE && textLine.equals("WEBVTT")) {
+            // changed for #27
+            if (cursorStatus == CursorStatus.NONE && textLine.startsWith("WEBVTT")) {
                 cursorStatus = CursorStatus.SIGNATURE;
                 continue;
             }
