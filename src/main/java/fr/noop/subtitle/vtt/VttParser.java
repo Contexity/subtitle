@@ -338,10 +338,14 @@ public class VttParser implements SubtitleParser {
 
     private SubtitleTimeCode parseTimeCode(String timeCodeString) throws SubtitleParsingException {
         try {
-            int hour = Integer.parseInt(timeCodeString.substring(0, 2));
-            int minute = Integer.parseInt(timeCodeString.substring(3, 5));
-            int second = Integer.parseInt(timeCodeString.substring(6, 8));
-            int millisecond = Integer.parseInt(timeCodeString.substring(9, 12));
+            String adjustedTimeCodeString = timeCodeString;
+            if (timeCodeString.length()<10){
+                adjustedTimeCodeString = "00:" + timeCodeString;
+            }
+            int hour = Integer.parseInt(adjustedTimeCodeString.substring(0, 2));
+            int minute = Integer.parseInt(adjustedTimeCodeString.substring(3, 5));
+            int second = Integer.parseInt(adjustedTimeCodeString.substring(6, 8));
+            int millisecond = Integer.parseInt(adjustedTimeCodeString.substring(9, 12));
             return new SubtitleTimeCode(hour, minute, second, millisecond);
         } catch (NumberFormatException e) {
             throw new SubtitleParsingException(String.format(
