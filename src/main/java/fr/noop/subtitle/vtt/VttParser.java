@@ -33,6 +33,7 @@ public class VttParser implements SubtitleParser {
         EMPTY_LINE,
         CUE_ID,
         CUE_TIMECODE,
+        NOTE,
         CUE_TEXT;
     }
 
@@ -59,13 +60,14 @@ public class VttParser implements SubtitleParser {
 
     @Override
     public VttObject parse(InputStream is, boolean strict) throws IOException, SubtitleParsingException {
-        // Create srt object
+        // Create vttObject object
         VttObject vttObject = new VttObject();
 
-        // Read each lines
+        // Read each line
         BufferedReader br = new BufferedReader(new InputStreamReader(is, this.charset));
         String textLine = "";
         CursorStatus cursorStatus = CursorStatus.NONE;
+        CursorStatus memorizedCursorStatus = CursorStatus.NONE;
         VttCue cue = null;
         String cueText = ""; // Text of the cue
 
@@ -84,9 +86,26 @@ public class VttParser implements SubtitleParser {
                 cursorStatus = CursorStatus.SIGNATURE;
                 continue;
             }
+            
+            if (textLine.startsWith("NOTE")){
+                memorizedCursorStatus = cursorStatus;
+                cursorStatus = CursorStatus.NOTE;
+                continue;                
+            }            
+            if (cursorStatus == CursorStatus.NOTE){
+                if (textLine.isEmpty()) {
+                    // NOTE section is over
+                    cursorStatus = memorizedCursorStatus;
+                }
+                // do nothing in any case
+                continue;
+                
+            }
+            
+            
+            
 
-            if (cursorStatus == CursorStatus.SIGNATURE ||
-                    cursorStatus == CursorStatus.EMPTY_LINE) {
+            if (cursorStatus == CursorStatus.SIGNATURE || cursorStatus == CursorStatus.EMPTY_LINE) {
                 if (textLine.isEmpty()) {
                     continue;
                 }
@@ -106,16 +125,6 @@ public class VttParser implements SubtitleParser {
                     continue;
                 }
                 
-
-                if (
-                    textLine.length() < 16 ||
-                    !textLine.substring(13, 16).equals("-->")
-                ) {
-                    // First textLine is the cue number
-                    cue.setId(textLine);
-                    continue;
-                }
-
                 // There is no cue number
             }
 
