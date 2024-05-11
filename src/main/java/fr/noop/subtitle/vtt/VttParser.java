@@ -43,6 +43,10 @@ public class VttParser implements SubtitleParser {
     }
 
     private String charset; // Charset of the input files
+    
+    // for #21
+    private final String TIMECODE_LINE_REGEX = "^(\\d\\d:)?(\\d\\d):(\\d\\d)\\.\\d\\d\\d --> (\\d\\d:)?(\\d\\d):(\\d\\d)\\.\\d\\d\\d ?.*";
+    
 
     public VttParser(String charset) {
         this.charset = charset;
@@ -88,6 +92,18 @@ public class VttParser implements SubtitleParser {
                 // New cue
                 cue = new VttCue();
                 cursorStatus = CursorStatus.CUE_ID;
+                
+                if (
+                    textLine.length() < 16 ||
+                    // changed for issue #21
+                    //!textLine.substring(13, 16).equals("-->")
+                    !(textLine.matches(TIMECODE_LINE_REGEX))    
+                ) {
+                    // First textLine is the cue number
+                    cue.setId(textLine);
+                    continue;
+                }
+                
 
                 if (
                     textLine.length() < 16 ||
@@ -105,15 +121,21 @@ public class VttParser implements SubtitleParser {
             // Second textLine defines the start and end time codes
             // 00:01:21.456 --> 00:01:23.417
             if (cursorStatus == CursorStatus.CUE_ID) {
-                if (textLine.length() < 29 ||
-                    !textLine.substring(13, 16).equals("-->")
+                if (//textLine.length() < 29 ||
+                    // changed for issue #21
+                    //!textLine.substring(13, 16).equals("-->")
+                    !(textLine.matches(TIMECODE_LINE_REGEX))    
                 ) {
                     throw new SubtitleParsingException(String.format(
                             "Timecode textLine is badly formated: %s", textLine));
                 }
 
-                cue.setStartTime(this.parseTimeCode(textLine.substring(0, 12)));
-                cue.setEndTime(this.parseTimeCode(textLine.substring(17)));
+                // changed for issue #21
+                //cue.setStartTime(this.parseTimeCode(textLine.substring(0, 12)));
+                //cue.setEndTime(this.parseTimeCode(textLine.substring(17)));
+                int arrowIndex = textLine.indexOf("-->");
+                cue.setStartTime(this.parseTimeCode(textLine.substring(0, arrowIndex).trim()));
+                cue.setEndTime(this.parseTimeCode(textLine.substring(arrowIndex + 3).trim()));
                 cursorStatus = CursorStatus.CUE_TIMECODE;
                 continue;
             }
